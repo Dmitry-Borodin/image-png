@@ -766,7 +766,11 @@ impl ZlibStream {
                     image_data.append(&mut self.buffer);
                     return Ok(());
                 },
-                TINFLStatus::HasMoreOutput => (),
+                TINFLStatus::HasMoreOutput => {
+                    let transferred = self.transfer_finished_data(image_data);
+                    assert!(transferred > 0 || in_consumed > 0 || out_consumed > 0,
+                        "No more forward progress made in stream decoding.");
+                },
                 _err => {
                     return Err(DecodingError::CorruptFlateStream);
                 },
@@ -799,11 +803,12 @@ impl ZlibStream {
             .min(isize::max_value() as usize)
     }
 
-    fn transfer_finished_data(&mut self, image_data: &mut Vec<u8>) {
+    fn transfer_finished_data(&mut self, image_data: &mut Vec<u8>) -> usize {
         let safe = self.out_pos.saturating_sub(CHUNCK_BUFFER_SIZE);
         // TODO: allocation limits.
         image_data.extend(self.buffer.drain(..safe));
         self.out_pos -= safe;
+        safe
     }
 }
 
