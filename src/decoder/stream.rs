@@ -350,6 +350,7 @@ impl StreamingDecoder {
                             self.current_chunk.raw_bytes.clear();
                             Ok((0, parsed))
                         } else {
+                            self.current_chunk.raw_bytes.clear();
                             goto!(
                                 0, ReadChunk(type_str, true),
                                 emit Decoded::PartialChunk(type_str)
